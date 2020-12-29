@@ -15,7 +15,7 @@ const submitBtn = document.querySelector('button[type="submit"]');
 const creditInput = document.getElementById('cc-num');
 const zipInput = document.getElementById('zip');
 const cvvInput = document.getElementById('cvv');
-
+const form = document.getElementById('form');
 
 // Content loaded event listener
 document.addEventListener("DOMContentLoaded", () =>{
@@ -64,7 +64,7 @@ designBox.onchange = (e) =>{
 
 
 // Adds up the total for the Selected form options
-activiesContainer.onchange = (e) => {
+activiesContainer.onchange = () => {
     let sessions = activiesContainer.querySelectorAll('[type="checkbox"]');
     total = 0;
     
@@ -80,6 +80,20 @@ activiesContainer.onchange = (e) => {
     checkEvents(); 
 }
 
+// Checkbox Accessibility Highlighting 
+const checkboxs = activiesContainer.querySelectorAll('[type="checkbox"]');
+
+checkboxs.forEach((box) => {
+    // highlight checkbox container on focus
+    box.addEventListener('focus', (e) => {
+        box.parentElement.classList.add('focus');
+    })
+
+    // remove highlight on blur
+    box.addEventListener('blur', (e) =>{
+        box.parentElement.classList.remove('focus');
+    })
+})
 
 // Reset Pay Method Format
 function ResetPayMethod(){
@@ -261,7 +275,7 @@ function checkCC(){
     }
 }
 
-// Check zip format
+// Check zip format (exactly 5 numbers)
 function checkZip(){
     if(zipInput.value.match(/^[0-9]{5}$/)){
         validZip = true;
@@ -275,7 +289,7 @@ function checkZip(){
     }
 }
 
-//Check CCV format
+//Check CCV format (exactly 3 numbers)
 function checkCVV(){
     if(cvvInput.value.match(/^[0-9]{3}$/)){
         validCVV = true;
@@ -302,14 +316,13 @@ function Validation(){
 }
 
 //Submit Event
-submitBtn.addEventListener('submit', (e) => {
+form.addEventListener('submit', (e) => {
     if(!Validation()){
         e.preventDefault();
         checkName();
         checkEmail();
         checkEvents();
         creditValidator();
-        alert("Theres blank shit")
     }
 })
 
