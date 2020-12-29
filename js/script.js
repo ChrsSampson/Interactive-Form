@@ -12,12 +12,9 @@ const paypalDesc = document.getElementById('paypal');
 const bitcoinDesc = document.getElementById('bitcoin');
 const creditDesc = document.getElementById('credit-card'); 
 const submitBtn = document.querySelector('button[type="submit"]');
-
-
-// Global Variables
-let totalValidation = 0;
-const validEmail = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
-let usedTimes = []
+const creditInput = document.getElementById('cc-num');
+const zipInput = document.getElementById('zip');
+const cvvInput = document.getElementById('cvv');
 
 
 // Content loaded event listener
@@ -27,24 +24,13 @@ document.addEventListener("DOMContentLoaded", () =>{
     colorBox.disabled = true;
     payMethod.value = "credit-card";
     ResetPayMethod();
-
+    
+    
 })
 
-
-// Realtime Email validation
-emailInput.onkeyup = (e) => {
-    
-    const error = document.getElementById('email-hint');
-    if(e.target.value.match(validEmail)){
-        emailInput.style.border = "2px solid green"
-        error.style.display = "none";
-    }
-    else{
-        emailInput.style.borderColor = "red"
-        error.style.display = "block";
-    }
-}
-
+// ------------------
+// Form Behavior
+// ------------------
 
 // Hide the "other job box" unelss selected
 jobSelect.onchange = (e) => {
@@ -69,11 +55,9 @@ designBox.onchange = (e) =>{
         let dataTheme = options[i].getAttribute('data-theme') //gets data theme of options
         if(themeOption == dataTheme){
             options[i].hidden = false;
-            // console.info(options[i].textContent + "show")
         }
         else{
             options[i].hidden = true;
-            // console.info(options[i].textContent + "hide")
         }
     }
 }
@@ -92,7 +76,8 @@ activiesContainer.onchange = (e) => {
     })
      activitiesTotal.textContent = `Total: $${total}`;
      
-    totalValidation = total; 
+    totalValidation = total;
+    checkEvents(); 
 }
 
 
@@ -123,87 +108,208 @@ payMethod.onchange = () => {
     ResetPayMethod();
 }
 
-// "Custom" Validation
-// This is pretty bad but I am lazy and maybe one day I will fix it. 
-// Everytime I look at it its gets worse. Its like staring at the sun. 
-function Validation(){
-    let valid = true;
-    // Check Name
-    const nameError = document.getElementById("name-hint")
-    if(nameInput.value === ""){
-        nameError.style.display = "block";
-        valid = false;
-        
+
+
+//--------------------
+//Validation Functions
+//--------------------
+
+//validation variables that all need to return true
+let validName = false;
+let validEmail = false;
+let validEvent = false;
+let validCC = false;
+let validZip = false;
+let validCVV = false;
+
+// Selectors for Errors
+const nameError = document.getElementById('name-hint');
+const emailError = document.getElementById('email-hint');
+const activeError = document.getElementById('activities-hint');
+const ccError = document.getElementById('cc-hint');
+const zipError = document.getElementById('zip-hint');
+const cvvError = document.getElementById('cvv-hint');
+
+//Error Function that shows and hides errors (error message optional) 
+//True = no error  False = error
+function updateError(bool, errorTarget, errorMsg){
+    if(bool){
+        errorTarget.classList.add('valid');
+        errorTarget.classList.remove('not-valid');
+        errorTarget.style.display = "block";
+        errorTarget.textContent = ""
     }
     else{
-        nameError.style.display = "none"
-    };
-
-    //Check Email
-    const emailError = document.getElementById('email-hint')
-    if(!emailInput.value.match(validEmail)){
-        emailError.style.display = "block"
-        valid = false;
+        errorTarget.classList.add('not-valid');
+        errorTarget.classList.remove('valid');
+        errorTarget.style.display = "block";
+        if(errorMsg != undefined || errorMsg != ""){
+            errorTarget.textContent = errorMsg;
+        }
+        // Fallback Error Message
+        else{
+            errorTarget.textContent = "That is not valid"
+        }
     }
-    else{
-        emailError.style.display = "none"
-    };
-
-    // Check Activities Selected
-    const totalError = document.getElementById('activities-hint');
-    if(totalValidation == 0){
-        totalError.style.display = "block";
-        valid = false;
-    }
-    else{
-        totalError.style.display = "none"
-    };
-
-    // Check Credit card format
-    const creditBox = document.getElementById('cc-num')
-    const creditError = document.getElementById('cc-hint')
-    if(creditBox.value.length < 13 || creditBox.value.length > 16){
-        creditError.style.display = "block";
-        valid = false; 
-    }
-    else{
-        creditError.style.display = "none"
-    };
-
-    // check zip code
-    const zipBox = document.getElementById('zip') 
-    const zipError = document.getElementById('zip-hint')
-    if(zipBox.value.length < 5 || zipBox.value.length > 5){
-        zipError.style.display = "block";
-        valid = false;
-    }
-    else{
-        zipError.style.display = "none"
-    };
-
-    // check CVV 
-    const cvvBox = document.getElementById('cvv')
-    const cvvError = document.getElementById('cvv-hint')
-    if(cvvBox.value.length < 3 || cvvBox.value.length > 3){
-        cvvError.style.display = "block";
-        valid = false;
-    }
-    else{
-        cvvError.style.display = "none"
-    };
-
-    if(valid = false){
-        const formError = document.getElementById("form-hint")
-        formError.style.display = "block"
-    }
-    else{
-        formError.style.display = "none"
-    };
-
-    return valid;
 }
 
-document.addEventListener('submit', () => {
-    
+//Check name for not null in realtime and on submit
+nameInput.onkeyup = (e) => {
+    checkName();
+}
+// Checks user input against a couple filters to give accurate errors
+function checkName(){
+    if(!nameInput.value.match(/^$/)){
+        validName = true;
+        updateError(validName, nameError,);
+    }
+    else{
+        validName = false;
+    }
+    updateError(validName, nameError, "Name Cannot be Blank");
+    return validName;
+}
 
+
+// Realtime Email validation (Works) can Also call on submit 
+emailInput.onkeyup = () => {
+    checkEmail();
+    
+}
+
+// This gets called on submit 
+function checkEmail(){
+    //format: (anything)@(anything but whitespace).(any letters and not whitespace)
+    const emailFormat = /^([a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-])+(@\S[a-zA-Z0-9-])+(.\S[a-zA-z]+)*$/;
+    if(emailInput.value.match(emailFormat)){
+        validEmail = true
+    }
+    else{
+        validEmail = false
+    }
+    updateError(validEmail, emailError, "This email could not be validated");
+    return validEmail;
+}
+
+// Event validation in realtime (event listener line 79)
+
+// This also gets called on submit
+function checkEvents(){
+    const events  = activiesContainer.querySelectorAll('input[type="checkbox"]')
+    let eveChecked = 0;
+    events.forEach((eve) => {
+        if(eve.checked){
+            eveChecked++
+        };
+    })
+    if(eveChecked > 0){
+        validEvent = true;
+    }
+    else{
+        validEvent = false;
+    };
+    updateError(validEvent, activeError, "You need to select at least one event")
+    return validEvent;
+}
+
+
+
+// checks if credit card validation needs to run (called on form submit event)
+//runs non-realtime and realtime validation functions 
+function creditValidator(){
+    if(payMethod.value == "credit-card"){
+       if( checkCC() && checkZip() && checkCVV() ){
+           return true;
+       }
+       else{
+           return false;
+       };    
+    }
+    else{
+        return true;
+    }
+}
+
+
+//Credit card validation functions in realtime 
+// Checks if CC numbe is number and valid length
+creditInput.onkeyup = () => {
+    checkCC();
+}
+//runs cc input throught filters to check formating (used in realtime and called on submit by credit validator)
+function checkCC(){
+    let validCard = /^[0-9]{13,16}$/
+    if(creditInput.value.match(validCard)){
+        validCC = true;
+        updateError(validCC, ccError);
+        return true
+    }
+    if(creditInput.value.match(/\D/)){
+        validCC = false;
+        updateError(validCC, ccError, "Credit card numbers should only container numbers");
+        return false
+    }
+    if(creditInput.value.match(/^[0-9]{16,}$/) || creditInput.value.match(/^[0-9]{0,12}$/)){
+        validCC = false;
+        updateError(validCC, ccError, "Credit card numbers should be between 13-16 numbers");
+        return false
+    }
+    else{
+        validCC = false;
+        updateError(validCC, ccError, "This is not a valid card number")
+        return false
+    }
+}
+
+// Check zip format
+function checkZip(){
+    if(zipInput.value.match(/^[0-9]{5}$/)){
+        validZip = true;
+        updateError(validZip, zipError);
+        return true
+    }
+    else{
+        validZip = false;
+        updateError(validZip, zipError, "Enter a valid Zip Code");
+        return false 
+    }
+}
+
+//Check CCV format
+function checkCVV(){
+    if(cvvInput.value.match(/^[0-9]{3}$/)){
+        validCVV = true;
+        updateError(validCVV, cvvError);
+        return true
+    }
+    else{
+        validCVV = false;
+        updateError(validCVV, cvvError, "Enter a valid CVV Code");
+        return false 
+    }
+}
+
+
+//Run  through all validation functions (called on form submit) 
+function Validation(){
+    if( checkName() && checkEmail() && checkEvents() && creditValidator() ){
+        return true;
+    }
+    else{
+        return false;
+        
+    }
+}
+
+//Submit Event
+submitBtn.addEventListener('submit', (e) => {
+    if(!Validation()){
+        e.preventDefault();
+        checkName();
+        checkEmail();
+        checkEvents();
+        creditValidator();
+        alert("Theres blank shit")
+    }
 })
+
