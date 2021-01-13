@@ -48,6 +48,7 @@ jobSelect.onchange = (e) => {
 designBox.onchange = (e) =>{
     // enable color box
     colorBox.disabled = false;
+    colorBox.value = "select"
     
     const options = colorBox.children;
     for(let i = 0; i < options.length; i++){
@@ -232,12 +233,16 @@ function checkEvents(){
 //runs non-realtime and realtime validation functions 
 function creditValidator(){
     if(payMethod.value == "credit-card"){
-       if( checkCC() && checkZip() && checkCVV() ){
-           return true;
-       }
-       else{
-           return false;
-       };    
+        creditArr = [checkCC(), checkZip(), checkCVV()];
+        creditArr.forEach(method => {
+           if(method){
+               return true
+           }
+           else{
+               return false
+           }
+       });
+       
     }
     else{
         return true;
